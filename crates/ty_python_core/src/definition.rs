@@ -545,6 +545,8 @@ pub(crate) struct LambdaParameterDefinitionNodeRef<'ast> {
 pub(crate) struct MatchPatternDefinitionNodeRef<'ast> {
     /// The outermost pattern node in which the identifier being defined occurs.
     pub(crate) pattern: &'ast ast::Pattern,
+    /// The match statement subject that this pattern is matched against.
+    pub(crate) subject: &'ast ast::Expr,
     /// The identifier being defined.
     pub(crate) identifier: &'ast ast::Identifier,
     /// The index of the identifier in the pattern when visiting the `pattern` node in evaluation
@@ -687,10 +689,12 @@ impl<'db> DefinitionNodeRef<'_, 'db> {
             }),
             DefinitionNodeRef::MatchPattern(MatchPatternDefinitionNodeRef {
                 pattern,
+                subject,
                 identifier,
                 index,
             }) => DefinitionKind::MatchPattern(MatchPatternDefinitionKind {
                 pattern: AstNodeRef::new(parsed, pattern),
+                subject: AstNodeRef::new(parsed, subject),
                 identifier: AstNodeRef::new(parsed, identifier),
                 index,
             }),
@@ -1122,6 +1126,7 @@ impl StarImportDefinitionKind {
 #[derive(Clone, Debug, get_size2::GetSize)]
 pub struct MatchPatternDefinitionKind {
     pattern: AstNodeRef<ast::Pattern>,
+    subject: AstNodeRef<ast::Expr>,
     identifier: AstNodeRef<ast::Identifier>,
     index: u32,
 }
@@ -1129,6 +1134,10 @@ pub struct MatchPatternDefinitionKind {
 impl MatchPatternDefinitionKind {
     pub fn pattern<'ast>(&self, module: &'ast ParsedModuleRef) -> &'ast ast::Pattern {
         self.pattern.node(module)
+    }
+
+    pub fn subject<'ast>(&self, module: &'ast ParsedModuleRef) -> &'ast ast::Expr {
+        self.subject.node(module)
     }
 
     pub fn index(&self) -> u32 {

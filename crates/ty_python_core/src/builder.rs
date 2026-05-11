@@ -3006,7 +3006,7 @@ impl<'db, 'ast> SemanticIndexBuilder<'db, 'ast> {
                 let mut previous_pattern: Option<PatternPredicate<'_>> = None;
 
                 for (i, case) in cases.iter().enumerate() {
-                    self.current_match_case = Some(CurrentMatchCase::new(&case.pattern));
+                    self.current_match_case = Some(CurrentMatchCase::new(&case.pattern, subject));
                     self.visit_pattern(&case.pattern);
                     self.current_match_case = None;
                     // unlike in [Stmt::If], we don't reset [no_case_matched]
@@ -3823,6 +3823,7 @@ impl<'ast> Visitor<'ast> for SemanticIndexBuilder<'_, 'ast> {
                 symbol.into(),
                 MatchPatternDefinitionNodeRef {
                     pattern: state.pattern,
+                    subject: state.subject,
                     identifier: name,
                     index: state.index,
                 },
@@ -3844,6 +3845,7 @@ impl<'ast> Visitor<'ast> for SemanticIndexBuilder<'_, 'ast> {
                 symbol.into(),
                 MatchPatternDefinitionNodeRef {
                     pattern: state.pattern,
+                    subject: state.subject,
                     identifier: name,
                     index: state.index,
                 },
@@ -4085,6 +4087,9 @@ struct CurrentMatchCase<'ast> {
     /// The pattern that's part of the current match case.
     pattern: &'ast ast::Pattern,
 
+    /// The expression being matched against.
+    subject: &'ast ast::Expr,
+
     /// The index of the sub-pattern that's being currently visited within the pattern.
     ///
     /// For example:
@@ -4100,8 +4105,12 @@ struct CurrentMatchCase<'ast> {
 }
 
 impl<'a> CurrentMatchCase<'a> {
-    fn new(pattern: &'a ast::Pattern) -> Self {
-        Self { pattern, index: 0 }
+    fn new(pattern: &'a ast::Pattern, subject: &'a ast::Expr) -> Self {
+        Self {
+            pattern,
+            subject,
+            index: 0,
+        }
     }
 }
 

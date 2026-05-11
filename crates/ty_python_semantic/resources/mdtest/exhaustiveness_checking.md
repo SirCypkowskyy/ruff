@@ -281,7 +281,7 @@ def match_exhaustive_generic[T](obj: GenericClass[T]) -> GenericClass[T]:
             reveal_type(obj)  # revealed: GenericClass[T@match_exhaustive_generic]
             return obj
         case GenericClass(x=x):
-            reveal_type(x)  # revealed: @Todo(`match` pattern definition types)
+            reveal_type(x)  # revealed: T@match_exhaustive_generic
             reveal_type(obj)  # revealed: GenericClass[T@match_exhaustive_generic]
             return obj
 ```
@@ -416,6 +416,59 @@ def as_pattern_non_exhaustive(subject: int | str):
 
             # this diagnostic is correct: the inferred type of `subject` is `str`
             assert_never(subject)  # error: [type-assertion-failure]
+```
+
+### Name bindings in patterns
+
+```py
+from dataclasses import dataclass
+
+@dataclass
+class Person:
+    name: str
+    age: int
+
+class Box:
+    item: str
+
+def dataclass_positional_pattern(person: Person):
+    match person:
+        case Person(name, age):
+            reveal_type(name)  # revealed: str
+            reveal_type(age)  # revealed: int
+
+def class_keyword_pattern(box: Box):
+    match box:
+        case Box(item=item):
+            reveal_type(item)  # revealed: str
+
+def builtin_self_pattern(subject: int | str):
+    match subject:
+        case int(value):
+            reveal_type(value)  # revealed: int
+        case str(value):
+            reveal_type(value)  # revealed: str
+
+def sequence_pattern(xs: list[int]):
+    match xs:
+        case [1, 2, x]:
+            reveal_type(x)  # revealed: int
+
+def sequence_pattern_excludes_string(subject: list[int] | str):
+    match subject:
+        case [x]:
+            reveal_type(x)  # revealed: int
+
+def sequence_star_pattern(xs: list[int]):
+    match xs:
+        case [first, *rest]:
+            reveal_type(first)  # revealed: int
+            reveal_type(rest)  # revealed: list[int]
+
+def none_as_pattern(subject: int | None):
+    match subject:
+        case None as value:
+            reveal_type(value)  # revealed: None
 ```
 
 ## Exhaustiveness checking for methods of enums
