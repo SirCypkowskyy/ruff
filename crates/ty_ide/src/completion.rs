@@ -314,6 +314,11 @@ pub struct Completion<'db> {
     /// Information used to sort this completion relative to others
     /// in the same collection.
     relevance: Relevance,
+    /// The dependency kind is a weak ordering signal used by
+    /// `CompletionRanker` after broader relevance has been established.
+    /// Same-label completions prefer the standard library, while different
+    /// labels preserve the existing third-party-over-stdlib fallback.
+    module_dependency_kind: Option<ModuleDependencyKind>,
 }
 
 impl<'db> Completion<'db> {
@@ -456,6 +461,7 @@ impl<'db> CompletionBuilder<'db> {
             is_context_specific: self.is_context_specific,
             documentation: self.documentation,
             relevance,
+            module_dependency_kind: self.module_dependency_kind,
         }
     }
 
@@ -1247,24 +1253,15 @@ struct Relevance {
     type_check_only: Sort,
     /// Deprecated symbols appear lower in the completion result.
     ///
-    /// This appears before `module_dependency_kind` so deprecation
-    /// downranking applies even when a symbol's module origin would
-    /// otherwise boost it, but after `type_check_only` so runtime-
-    /// unavailable symbols still sort last.
+    /// This appears before module-origin ordering so deprecation downranking
+    /// applies even when a symbol's origin would otherwise boost it, but after
+    /// `type_check_only` so runtime-unavailable symbols still sort last.
     deprecated: Sort,
-    /// The "dependency kind" of the module where this symbol
-    /// originates from.
-    ///
-    /// This lets us, e.g., prioritize first party project modules
-    /// over third party dependencies. This applies to both symbols
-    /// already in scope and unimported symbols, essentially forming a
-    /// preference ordering for symbols based on where they came from.
-    ///
-    /// Not all completions have this set. For example, keywords or
-    /// arguments. We assume that if it's not set, then there is some
-    /// other sorting criteria being applied or that it is generally
-    /// more specific than completions where this is set.
-    module_dependency_kind: Option<ModuleDependencyKind>,
+    /// Broad module-origin priority for origins that should rank above
+    /// unrelated symbols. General stdlib and third-party symbols stay even
+    /// here; `CompletionRanker` applies the weaker fallback ordering for
+    /// those completions.
+    module_dependency_priority: ModuleDependencyPriority,
 }
 
 impl Relevance {
@@ -1319,23 +1316,96 @@ impl Relevance {
             } else {
                 Sort::Even
             },
-            module_dependency_kind: c.module_dependency_kind,
+            module_dependency_priority: ModuleDependencyPriority::from_kind(
+                c.module_dependency_kind,
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
+enum ModuleDependencyPriority {
+    /// Completions without a module dependency kind are usually more specific
+    /// than auto-import candidates, such as arguments or keywords.
+    #[default]
+    Specific,
+    Builtin,
+    Project,
+    StdlibSpecial,
+    Other,
+}
+
+impl ModuleDependencyPriority {
+    fn from_kind(kind: Option<ModuleDependencyKind>) -> ModuleDependencyPriority {
+        match kind {
+            None | Some(ModuleDependencyKind::Current) => ModuleDependencyPriority::Specific,
+            Some(ModuleDependencyKind::Builtin) => ModuleDependencyPriority::Builtin,
+            Some(ModuleDependencyKind::Project) => ModuleDependencyPriority::Project,
+            Some(ModuleDependencyKind::StdlibSpecial) => ModuleDependencyPriority::StdlibSpecial,
+            Some(
+                ModuleDependencyKind::Stdlib
+                | ModuleDependencyKind::Namespace
+                | ModuleDependencyKind::ThirdParty,
+            ) => ModuleDependencyPriority::Other,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
+enum DifferentNameModuleDependencyPriority {
+    /// The fallback origin order for completions with different labels.
+    ///
+    /// This preserves the previous behavior where general third-party symbols
+    /// rank above general stdlib symbols unless the completion labels are the
+    /// same.
+    ///
+    /// Completions without a module dependency kind are usually more specific
+    /// than auto-import candidates, such as arguments or keywords.
+    #[default]
+    Specific,
+    Builtin,
+    Project,
+    StdlibSpecial,
+    Namespace,
+    ThirdParty,
+    Stdlib,
+}
+
+impl DifferentNameModuleDependencyPriority {
+    fn from_kind(kind: Option<ModuleDependencyKind>) -> DifferentNameModuleDependencyPriority {
+        match kind {
+            None | Some(ModuleDependencyKind::Current) => {
+                DifferentNameModuleDependencyPriority::Specific
+            }
+            Some(ModuleDependencyKind::Builtin) => DifferentNameModuleDependencyPriority::Builtin,
+            Some(ModuleDependencyKind::Project) => DifferentNameModuleDependencyPriority::Project,
+            Some(ModuleDependencyKind::StdlibSpecial) => {
+                DifferentNameModuleDependencyPriority::StdlibSpecial
+            }
+            Some(ModuleDependencyKind::Namespace) => {
+                DifferentNameModuleDependencyPriority::Namespace
+            }
+            Some(ModuleDependencyKind::ThirdParty) => {
+                DifferentNameModuleDependencyPriority::ThirdParty
+            }
+            Some(ModuleDependencyKind::Stdlib) => DifferentNameModuleDependencyPriority::Stdlib,
         }
     }
 }
 
 /// The dependency "kind" of a module.
 ///
-/// Everything above "current" is applied to unimported symbols. It
+/// Every variant after `Current` is applied to unimported symbols. It
 /// categorizes them by where the module is defined. We only support
 /// three broad categories right now: stdlib, third party and project.
-/// Ideally, we would distinguish between _direct_ third party code and
-/// _indirect_ third party code, but ty doesn't yet understand how to
-/// do this (as of 2026-01-08).
+/// We prefer stdlib over third party because ty doesn't yet distinguish
+/// direct dependencies from transitive dependencies (as of 2026-01-08).
 ///
-/// Note that these are defined in a particular order. That
-/// is, modules in the project get higher priority than those
-/// not in the project.
+/// Note that these are defined in a particular order for same-label
+/// completion tie-breaks. That is, modules in the project get higher
+/// priority than those not in the project, and stdlib modules get higher
+/// priority than third-party modules. Different-label completions use
+/// `DifferentNameModuleDependencyPriority` instead.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
 enum ModuleDependencyKind {
     /// Symbols already in scope in the user's current module.
@@ -1355,8 +1425,7 @@ enum ModuleDependencyKind {
     /// Symbols from "special" standard library modules that
     /// are so commonly used---but commonly have names in
     /// conflict with other stdlib modules---that we want to
-    /// prioritize them above third-party re-exports and
-    /// other stdlib modules.
+    /// prioritize them above other stdlib modules.
     ///
     /// `typing` is a good example of this. It has lots of
     /// symbols that also exist in other modules. e.g.,
@@ -1366,6 +1435,9 @@ enum ModuleDependencyKind {
     /// We also include `collections`
     /// for similar reasons.
     StdlibSpecial,
+    /// Symbols from the standard library get ranked after
+    /// project symbols but before third-party symbols.
+    Stdlib,
     /// A namespace package somewhat defies classification, since
     /// it can exist over multiple search paths. Since std doesn't
     /// use namespace packages, we just assume that they are roughly
@@ -1375,19 +1447,12 @@ enum ModuleDependencyKind {
     /// package is within the user's project. Probably we
     /// could do better once we know how to navigate namespace
     /// packages better. Regardless, we put this between
-    /// strongly preferred and weakly preferred modules as a
-    /// bad compromise for now.
+    /// stdlib and ordinary third-party modules as a bad compromise
+    /// for now.
     Namespace,
     /// Symbols defined somewhere in a dependency, direct or
     /// indirect.
     ThirdParty,
-    /// Symbols from the standard library get ranked last by
-    /// the logic that they are least specific to the end user's
-    /// context.
-    ///
-    /// This is somewhat specious since while they are least
-    /// specific, some stdlib modules are very commonly used.
-    Stdlib,
 }
 
 impl ModuleDependencyKind {
@@ -2646,17 +2711,33 @@ impl PartialEq for CompletionRanker<'_> {
     fn eq(&self, rhs: &CompletionRanker<'_>) -> bool {
         self.0.relevance == rhs.0.relevance
             && self.0.name == rhs.0.name
+            && self.0.module_dependency_kind == rhs.0.module_dependency_kind
             && self.0.module_name == rhs.0.module_name
     }
 }
 
 impl Ord for CompletionRanker<'_> {
     fn cmp(&self, rhs: &CompletionRanker<'_>) -> Ordering {
-        (&self.0.relevance, &self.0.name, &self.0.module_name).cmp(&(
-            &rhs.0.relevance,
-            &rhs.0.name,
-            &rhs.0.module_name,
-        ))
+        match self.0.relevance.cmp(&rhs.0.relevance) {
+            Ordering::Equal => {}
+            ordering => return ordering,
+        }
+
+        if self.0.name == rhs.0.name {
+            return (&self.0.module_dependency_kind, &self.0.module_name)
+                .cmp(&(&rhs.0.module_dependency_kind, &rhs.0.module_name));
+        }
+
+        (
+            DifferentNameModuleDependencyPriority::from_kind(self.0.module_dependency_kind),
+            &self.0.name,
+            &self.0.module_name,
+        )
+            .cmp(&(
+                DifferentNameModuleDependencyPriority::from_kind(rhs.0.module_dependency_kind),
+                &rhs.0.name,
+                &rhs.0.module_name,
+            ))
     }
 }
 
@@ -8673,7 +8754,7 @@ def no_type_check_decorator():
     }
 
     #[test]
-    fn auto_import_keeps_sys_below_third_party() {
+    fn auto_import_prefers_sys_over_third_party_reexport() {
         let builder = CursorTest::builder()
             .with_site_packages()
             .source("main.py", "argv<CURSOR>")
@@ -8693,13 +8774,13 @@ from sys import argv as argv
                     )
             });
         assert_snapshot!(builder.build().snapshot(), @"
-        argv :: thirdparty
         argv :: sys
+        argv :: thirdparty
         ");
     }
 
     #[test]
-    fn auto_import_keeps_os_below_third_party() {
+    fn auto_import_prefers_os_over_third_party_reexport() {
         let builder = CursorTest::builder()
             .with_site_packages()
             .source("main.py", "getpid<CURSOR>")
@@ -8719,8 +8800,54 @@ from os import getpid as getpid
                     )
             });
         assert_snapshot!(builder.build().snapshot(), @"
-        getpid :: thirdparty
         getpid :: os
+        getpid :: thirdparty
+        ");
+    }
+
+    #[test]
+    fn auto_import_prefers_pathlib_over_third_party_reexport() {
+        let builder = CursorTest::builder()
+            .with_site_packages()
+            .source("main.py", "Path<CURSOR>")
+            .site_packages(
+                "thirdparty/__init__.py",
+                r#"
+from pathlib import Path as Path
+"#,
+            )
+            .completion_test_builder()
+            .module_names()
+            .filter(|c| {
+                c.name == "Path"
+                    && matches!(
+                        c.module_name.map(ModuleName::as_str),
+                        Some("pathlib" | "thirdparty")
+                    )
+            });
+        assert_snapshot!(builder.build().snapshot(), @"
+        Path :: pathlib
+        Path :: thirdparty
+        ");
+    }
+
+    #[test]
+    fn auto_import_keeps_different_third_party_name_over_stdlib() {
+        let builder = CursorTest::builder()
+            .with_site_packages()
+            .source("main.py", "av<CURSOR>")
+            .site_packages("thirdparty/__init__.py", "zargv = 1")
+            .completion_test_builder()
+            .module_names()
+            .filter(|c| {
+                matches!(
+                    (c.name.as_str(), c.module_name.map(ModuleName::as_str)),
+                    ("argv", Some("sys")) | ("zargv", Some("thirdparty"))
+                )
+            });
+        assert_snapshot!(builder.build().snapshot(), @"
+        zargv :: thirdparty
+        argv :: sys
         ");
     }
 
