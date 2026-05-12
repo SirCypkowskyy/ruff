@@ -59,6 +59,7 @@ pub fn folding_ranges(
     let mut visitor = FoldingRangeVisitor {
         source: source.as_str(),
         ranges: vec![],
+        block_header_ranges: vec![],
         tokens: parsed.tokens(),
         range_filter,
     };
@@ -90,6 +91,7 @@ pub fn folding_ranges(
 struct FoldingRangeVisitor<'a> {
     source: &'a str,
     ranges: Vec<FoldingRange>,
+    block_header_ranges: Vec<TextRange>,
     tokens: &'a Tokens,
     range_filter: Option<TextRange>,
 }
@@ -115,6 +117,35 @@ impl FoldingRangeVisitor<'_> {
             return;
         }
         self.ranges.push(folding_range);
+    }
+
+    fn overlaps_block_header(&self, range: TextRange) -> bool {
+        for header_range in self.block_header_ranges.iter().rev() {
+            if header_range.start() >= range.end() {
+                continue;
+            }
+            if header_range.end() <= range.start() {
+                break;
+            }
+            return true;
+        }
+
+        false
+    }
+
+    /// Add the given folding range unless it overlaps a block header.
+    fn add_range_outside_block_header(&mut self, folding_range: impl Into<FoldingRange>) {
+        let folding_range = folding_range.into();
+        if self.overlaps_block_header(folding_range.range) {
+            return;
+        }
+
+        self.add_range(folding_range);
+    }
+
+    /// Add the given expression folding range unless it overlaps a block header.
+    fn add_expression_range(&mut self, range: TextRange) {
+        self.add_range_outside_block_header(range);
     }
 
     fn is_multiline(&self, range: TextRange) -> bool {
@@ -201,7 +232,7 @@ impl FoldingRangeVisitor<'_> {
                 region_starts.push(comment_range.start());
             } else if trimmed.starts_with("endregion") {
                 if let Some(start) = region_starts.pop() {
-                    self.add_range(
+                    self.add_range_outside_block_header(
                         FoldingRange::from(TextRange::new(start, comment_range.end()))
                             .with_kind(FoldingRangeKind::Region),
                     );
@@ -217,7 +248,9 @@ impl FoldingRangeVisitor<'_> {
         for &comment_range in own_line_comment_ranges {
             if !self.intersects_range_filter(comment_range) {
                 if let Some(range) = comment_block_range {
-                    self.add_range(FoldingRange::from(range).with_kind(FoldingRangeKind::Comment));
+                    self.add_range_outside_block_header(
+                        FoldingRange::from(range).with_kind(FoldingRangeKind::Comment),
+                    );
                     comment_block_range = None;
                 }
                 continue;
@@ -244,7 +277,7 @@ impl FoldingRangeVisitor<'_> {
                             comment_range.start(),
                         )
                     {
-                        self.add_range(
+                        self.add_range_outside_block_header(
                             FoldingRange::from(*comment_block_range)
                                 .with_kind(FoldingRangeKind::Comment),
                         );
@@ -256,12 +289,16 @@ impl FoldingRangeVisitor<'_> {
                     comment_block_range = Some(comment_range);
                 }
             } else if let Some(range) = comment_block_range {
-                self.add_range(FoldingRange::from(range).with_kind(FoldingRangeKind::Comment));
+                self.add_range_outside_block_header(
+                    FoldingRange::from(range).with_kind(FoldingRangeKind::Comment),
+                );
                 comment_block_range = None;
             }
         }
         if let Some(range) = comment_block_range {
-            self.add_range(FoldingRange::from(range).with_kind(FoldingRangeKind::Comment));
+            self.add_range_outside_block_header(
+                FoldingRange::from(range).with_kind(FoldingRangeKind::Comment),
+            );
         }
     }
 
@@ -295,6 +332,32 @@ impl FoldingRangeVisitor<'_> {
             .map(Ranged::start)
     }
 
+    /// Adds folding ranges for an entire block and for its body.
+    fn add_block_ranges<T: Ranged>(
+        &mut self,
+        block_start: TextSize,
+        body_header_start: TextSize,
+        block: &[T],
+    ) {
+        let Some(first_block_statement) = block.first() else {
+            return;
+        };
+
+        self.block_header_ranges
+            .push(TextRange::new(block_start, first_block_statement.start()));
+        self.add_block_range(block_start, block);
+        self.add_block_body_range(body_header_start, block);
+    }
+
+    /// Adds a folding range for the entire block, including the block header.
+    fn add_block_range<T: Ranged>(&mut self, block_start: TextSize, block: &[T]) {
+        let Some(last_block_statement) = block.last() else {
+            return;
+        };
+
+        self.add_range(TextRange::new(block_start, last_block_statement.end()));
+    }
+
     /// Adds a folding range for the body of the given block, while leaving the block header visible.
     fn add_block_body_range<T: Ranged>(&mut self, header_start: TextSize, block: &[T]) {
         let (Some(first_block_statement), Some(last_block_statement)) =
@@ -312,9 +375,8 @@ impl FoldingRangeVisitor<'_> {
         self.add_range(TextRange::new(block_fold_start, last_block_statement.end()));
     }
 
-    /// Searches for a given keyword and, if present, adds a fold for the body of the block while
-    /// leaving the block header visible.
-    fn add_block_body_range_after_keyword<T: Ranged>(
+    /// Searches for a given keyword and, if present, adds folds for the block and its body.
+    fn add_block_ranges_after_keyword<T: Ranged>(
         &mut self,
         keyword: TokenKind,
         previous_block_end: TextSize,
@@ -330,7 +392,7 @@ impl FoldingRangeVisitor<'_> {
             return;
         };
 
-        self.add_block_body_range(keyword_start, block);
+        self.add_block_ranges(keyword_start, keyword_start, block);
     }
 }
 
@@ -346,7 +408,7 @@ impl SourceOrderVisitor<'_> for FoldingRangeVisitor<'_> {
             }
             // Compound statements that create folding regions
             AnyNodeRef::StmtFunctionDef(func) => {
-                self.add_block_body_range(func.name.end(), &func.body);
+                self.add_block_ranges(func.start(), func.name.end(), &func.body);
                 // Note that this may be duplicative with folding
                 // ranges added for string literals. But I don't think
                 // the LSP protocol specifies that this is a problem.
@@ -357,7 +419,7 @@ impl SourceOrderVisitor<'_> for FoldingRangeVisitor<'_> {
                 self.add_docstring_range(&func.body);
             }
             AnyNodeRef::StmtClassDef(class) => {
-                self.add_block_body_range(class.name.end(), &class.body);
+                self.add_block_ranges(class.start(), class.name.end(), &class.body);
                 // See comment above for class docstrings about this
                 // being duplicative with adding folding ranges for
                 // string literals.
@@ -365,17 +427,17 @@ impl SourceOrderVisitor<'_> for FoldingRangeVisitor<'_> {
             }
             AnyNodeRef::StmtIf(if_stmt) => {
                 // Fold each branch individually rather than the entire if block.
-                self.add_block_body_range(if_stmt.start(), &if_stmt.body);
+                self.add_block_ranges(if_stmt.start(), if_stmt.start(), &if_stmt.body);
             }
             AnyNodeRef::ElifElseClause(clause) => {
                 // Each elif/else clause has its own range.
-                self.add_block_body_range(clause.start(), &clause.body);
+                self.add_block_ranges(clause.start(), clause.start(), &clause.body);
             }
             AnyNodeRef::StmtFor(for_stmt) => {
                 // Fold the for body separately from the else block.
-                self.add_block_body_range(for_stmt.start(), &for_stmt.body);
+                self.add_block_ranges(for_stmt.start(), for_stmt.start(), &for_stmt.body);
                 if let Some(body_last) = for_stmt.body.last() {
-                    self.add_block_body_range_after_keyword(
+                    self.add_block_ranges_after_keyword(
                         TokenKind::Else,
                         body_last.end(),
                         &for_stmt.orelse,
@@ -384,9 +446,9 @@ impl SourceOrderVisitor<'_> for FoldingRangeVisitor<'_> {
             }
             AnyNodeRef::StmtWhile(while_stmt) => {
                 // Fold the while body separately from the else block.
-                self.add_block_body_range(while_stmt.start(), &while_stmt.body);
+                self.add_block_ranges(while_stmt.start(), while_stmt.start(), &while_stmt.body);
                 if let Some(body_last) = while_stmt.body.last() {
-                    self.add_block_body_range_after_keyword(
+                    self.add_block_ranges_after_keyword(
                         TokenKind::Else,
                         body_last.end(),
                         &while_stmt.orelse,
@@ -394,11 +456,11 @@ impl SourceOrderVisitor<'_> for FoldingRangeVisitor<'_> {
                 }
             }
             AnyNodeRef::StmtWith(with_stmt) => {
-                self.add_block_body_range(with_stmt.start(), &with_stmt.body);
+                self.add_block_ranges(with_stmt.start(), with_stmt.start(), &with_stmt.body);
             }
             AnyNodeRef::StmtTry(try_stmt) => {
                 // Fold the try body separately from handlers, else, and finally.
-                self.add_block_body_range(try_stmt.start(), &try_stmt.body);
+                self.add_block_ranges(try_stmt.start(), try_stmt.start(), &try_stmt.body);
                 // Exception handlers are folded via ExceptHandlerExceptHandler.
                 // Fold the else block if present.
                 if let Some(previous_block_end) = try_stmt
@@ -407,7 +469,7 @@ impl SourceOrderVisitor<'_> for FoldingRangeVisitor<'_> {
                     .map(Ranged::end)
                     .or_else(|| try_stmt.body.last().map(Ranged::end))
                 {
-                    self.add_block_body_range_after_keyword(
+                    self.add_block_ranges_after_keyword(
                         TokenKind::Else,
                         previous_block_end,
                         &try_stmt.orelse,
@@ -421,7 +483,7 @@ impl SourceOrderVisitor<'_> for FoldingRangeVisitor<'_> {
                     .or_else(|| try_stmt.handlers.last().map(Ranged::end))
                     .or_else(|| try_stmt.body.last().map(Ranged::end))
                 {
-                    self.add_block_body_range_after_keyword(
+                    self.add_block_ranges_after_keyword(
                         TokenKind::Finally,
                         previous_block_end,
                         &try_stmt.finalbody,
@@ -429,69 +491,69 @@ impl SourceOrderVisitor<'_> for FoldingRangeVisitor<'_> {
                 }
             }
             AnyNodeRef::StmtMatch(match_stmt) => {
-                self.add_block_body_range(match_stmt.start(), &match_stmt.cases);
+                self.add_block_ranges(match_stmt.start(), match_stmt.start(), &match_stmt.cases);
             }
 
             // Match cases within match statements
             AnyNodeRef::MatchCase(case) => {
-                self.add_block_body_range(case.start(), &case.body);
+                self.add_block_ranges(case.start(), case.start(), &case.body);
             }
 
             // Exception handlers
             AnyNodeRef::ExceptHandlerExceptHandler(handler) => {
-                self.add_block_body_range(handler.start(), &handler.body);
+                self.add_block_ranges(handler.start(), handler.start(), &handler.body);
             }
 
             // Multiline expressions
             AnyNodeRef::ExprList(list) => {
-                self.add_range(list.range());
+                self.add_expression_range(list.range());
             }
             AnyNodeRef::ExprTuple(tuple)
                 // Only fold parenthesized tuples.
                 if tuple.parenthesized => {
-                    self.add_range(tuple.range());
+                    self.add_expression_range(tuple.range());
                 }
             AnyNodeRef::ExprDict(dict) => {
-                self.add_range(dict.range());
+                self.add_expression_range(dict.range());
             }
             AnyNodeRef::ExprSet(set) => {
-                self.add_range(set.range());
+                self.add_expression_range(set.range());
             }
             AnyNodeRef::ExprListComp(listcomp) => {
-                self.add_range(listcomp.range());
+                self.add_expression_range(listcomp.range());
             }
             AnyNodeRef::ExprSetComp(setcomp) => {
-                self.add_range(setcomp.range());
+                self.add_expression_range(setcomp.range());
             }
             AnyNodeRef::ExprDictComp(dictcomp) => {
-                self.add_range(dictcomp.range());
+                self.add_expression_range(dictcomp.range());
             }
             AnyNodeRef::ExprGenerator(generator) => {
-                self.add_range(generator.range());
+                self.add_expression_range(generator.range());
             }
 
             // Function calls with arguments spanning multiple lines
             AnyNodeRef::ExprCall(call) => {
-                self.add_range(call.range());
+                self.add_expression_range(call.range());
             }
 
             // String and bytes literals
             AnyNodeRef::ExprStringLiteral(string) => {
-                self.add_range(string.range());
+                self.add_expression_range(string.range());
             }
             AnyNodeRef::ExprBytesLiteral(bytes) => {
-                self.add_range(bytes.range());
+                self.add_expression_range(bytes.range());
             }
             AnyNodeRef::ExprFString(fstring) => {
-                self.add_range(fstring.range());
+                self.add_expression_range(fstring.range());
             }
             AnyNodeRef::ExprTString(tstring) => {
-                self.add_range(tstring.range());
+                self.add_expression_range(tstring.range());
             }
 
             // Type parameter lists
             AnyNodeRef::TypeParams(params) => {
-                self.add_range(params.range());
+                self.add_expression_range(params.range());
             }
 
             _ => {}
