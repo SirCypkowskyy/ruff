@@ -533,6 +533,18 @@ class MyClass:
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / class MyClass:
+        3 | |     def __init__(self):
+        4 | |         self.value = 1
+        5 | |
+        6 | |     def method(self):
+        7 | |         return self.value
+          | |_________________________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:15
           |
         2 |   class MyClass:
@@ -546,12 +558,28 @@ class MyClass:
           |
 
         info[folding-range]: Folding Range
+         --> main.py:3:5
+          |
+        3 | /     def __init__(self):
+        4 | |         self.value = 1
+          | |______________________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:3:24
           |
         3 |       def __init__(self):
           |  ________________________^
         4 | |         self.value = 1
           | |______________________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:6:5
+          |
+        6 | /     def method(self):
+        7 | |         return self.value
+          | |_________________________^
           |
 
         info[folding-range]: Folding Range
@@ -585,11 +613,36 @@ class MyClass:
 
         assert_snapshot!(test.folding_ranges(), @r#"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / class MyClass:
+        3 | |     def __init__(self):
+        4 | |         self.value = 1
+        5 | |         """
+        6 | |         This is an
+        7 | |         attribute comment.
+        8 | |         """
+          | |___________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:15
           |
         2 |   class MyClass:
           |  _______________^
         3 | |     def __init__(self):
+        4 | |         self.value = 1
+        5 | |         """
+        6 | |         This is an
+        7 | |         attribute comment.
+        8 | |         """
+          | |___________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:3:5
+          |
+        3 | /     def __init__(self):
         4 | |         self.value = 1
         5 | |         """
         6 | |         This is an
@@ -647,6 +700,14 @@ def main():
         3 | | import sys
         4 | | from typing import List, Dict
           | |_____________________________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:6:1
+          |
+        6 | / def main():
+        7 | |     pass
+          | |________^
           |
 
         info[folding-range]: Folding Range
@@ -740,6 +801,15 @@ from fastapi import FastAPI
            |
 
         info[folding-range]: Folding Range
+         --> main.py:5:1
+          |
+        5 | / try:
+        6 | |     import foo
+        7 | |     import bar
+          | |______________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:5:5
           |
         5 |   try:
@@ -756,6 +826,15 @@ from fastapi import FastAPI
         7 | |     import bar
           | |______________^
           |
+
+        info[folding-range]: Folding Range
+          --> main.py:8:1
+           |
+         8 | / except ImportError:
+         9 | |     first = None
+        10 | |     bar = None
+           | |______________^
+           |
 
         info[folding-range]: Folding Range
           --> main.py:8:20
@@ -795,6 +874,20 @@ class MyClass:
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / def my_function():
+        3 | |     import os
+        4 | |     import sys
+        5 | |
+        6 | |     import numpy
+        7 | |     import pandas
+        8 | |
+        9 | |     do_something()
+          | |__________________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:19
           |
         2 |   def my_function():
@@ -824,6 +917,15 @@ class MyClass:
         7 | |     import pandas
           | |_________________^
           |
+
+        info[folding-range]: Folding Range
+          --> main.py:12:1
+           |
+        12 | / class MyClass:
+        13 | |     import typing
+        14 | |     import collections
+           | |______________________^
+           |
 
         info[folding-range]: Folding Range
           --> main.py:12:15
@@ -875,12 +977,28 @@ else:
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / if condition:
+        3 | |     do_something()
+          | |__________________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:14
           |
         2 |   if condition:
           |  ______________^
         3 | |     do_something()
           | |__________________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:4:1
+          |
+        4 | / elif other:
+        5 | |     do_other()
+          | |______________^
           |
 
         info[folding-range]: Folding Range
@@ -893,6 +1011,14 @@ else:
           |
 
         info[folding-range]: Folding Range
+         --> main.py:6:1
+          |
+        6 | / else:
+        7 | |     default()
+          | |_____________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:6:6
           |
         6 |   else:
@@ -902,12 +1028,28 @@ else:
           |
 
         info[folding-range]: Folding Range
+          --> main.py:9:1
+           |
+         9 | / for item in items:
+        10 | |     process(item)
+           | |_________________^
+           |
+
+        info[folding-range]: Folding Range
           --> main.py:9:19
            |
          9 |   for item in items:
            |  ___________________^
         10 | |     process(item)
            | |_________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:11:1
+           |
+        11 | / else:
+        12 | |     okay()
+           | |__________^
            |
 
         info[folding-range]: Folding Range
@@ -920,12 +1062,28 @@ else:
            |
 
         info[folding-range]: Folding Range
+          --> main.py:14:1
+           |
+        14 | / while running:
+        15 | |     continue_work()
+           | |___________________^
+           |
+
+        info[folding-range]: Folding Range
           --> main.py:14:15
            |
         14 |   while running:
            |  _______________^
         15 | |     continue_work()
            | |___________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:16:1
+           |
+        16 | / else:
+        17 | |     doit()
+           | |__________^
            |
 
         info[folding-range]: Folding Range
@@ -937,6 +1095,376 @@ else:
            | |__________^
            |
         ");
+    }
+
+    #[test]
+    fn test_folding_range_outer_and_body_blocks() {
+        let test = CursorTest::builder()
+            .source(
+                "main.py",
+                r#"
+def choose(
+    value,
+    fallback,
+):
+    if any(
+        [
+            value,
+        ]
+    ):
+        return value
+    elif (
+        fallback
+    ):
+        return fallback
+    else:
+        return None
+<CURSOR>
+"#,
+            )
+            .build();
+
+        assert_snapshot!(test.folding_ranges(), @"
+        info[folding-range]: Folding Range
+          --> main.py:2:1
+           |
+         2 | / def choose(
+         3 | |     value,
+         4 | |     fallback,
+         5 | | ):
+         6 | |     if any(
+         7 | |         [
+         8 | |             value,
+         9 | |         ]
+        10 | |     ):
+        11 | |         return value
+        12 | |     elif (
+        13 | |         fallback
+        14 | |     ):
+        15 | |         return fallback
+        16 | |     else:
+        17 | |         return None
+           | |___________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:5:3
+           |
+         5 |   ):
+           |  ___^
+         6 | |     if any(
+         7 | |         [
+         8 | |             value,
+         9 | |         ]
+        10 | |     ):
+        11 | |         return value
+        12 | |     elif (
+        13 | |         fallback
+        14 | |     ):
+        15 | |         return fallback
+        16 | |     else:
+        17 | |         return None
+           | |___________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:6:5
+           |
+         6 | /     if any(
+         7 | |         [
+         8 | |             value,
+         9 | |         ]
+        10 | |     ):
+        11 | |         return value
+           | |____________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:10:7
+           |
+        10 |       ):
+           |  _______^
+        11 | |         return value
+           | |____________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:12:5
+           |
+        12 | /     elif (
+        13 | |         fallback
+        14 | |     ):
+        15 | |         return fallback
+           | |_______________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:14:7
+           |
+        14 |       ):
+           |  _______^
+        15 | |         return fallback
+           | |_______________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:16:5
+           |
+        16 | /     else:
+        17 | |         return None
+           | |___________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:16:10
+           |
+        16 |       else:
+           |  __________^
+        17 | |         return None
+           | |___________________^
+           |
+        ");
+    }
+
+    #[test]
+    fn test_folding_range_suppresses_header_comment_blocks() {
+        let test = CursorTest::builder()
+            .source(
+                "main.py",
+                r#"
+def choose(
+    # primary value
+    # fallback value
+    value,
+    fallback,
+):
+    return value or fallback
+<CURSOR>
+"#,
+            )
+            .build();
+
+        assert_snapshot!(test.folding_ranges(), @"
+        info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / def choose(
+        3 | |     # primary value
+        4 | |     # fallback value
+        5 | |     value,
+        6 | |     fallback,
+        7 | | ):
+        8 | |     return value or fallback
+          | |____________________________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:7:3
+          |
+        7 |   ):
+          |  ___^
+        8 | |     return value or fallback
+          | |____________________________^
+          |
+        ");
+    }
+
+    #[test]
+    fn test_folding_range_outer_and_body_other_multiline_block_headers() {
+        let test = CursorTest::builder()
+            .source(
+                "main.py",
+                r#"
+class Repository[
+    Model,
+    Key,
+](
+    Mapping[Key, Model],
+    Protocol,
+):
+    pass
+
+for (
+    key,
+    value,
+) in (
+    items
+):
+    pass
+
+with (
+    open("a") as a,
+    open("b") as b,
+):
+    pass
+
+try:
+    pass
+except (
+    ValueError,
+    TypeError,
+) as error:
+    raise error
+
+match value:
+    case {
+        "kind": kind,
+        "payload": payload,
+    }:
+        handle_mapping()
+<CURSOR>
+"#,
+            )
+            .build();
+
+        assert_snapshot!(test.folding_ranges(), @r#"
+        info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / class Repository[
+        3 | |     Model,
+        4 | |     Key,
+        5 | | ](
+        6 | |     Mapping[Key, Model],
+        7 | |     Protocol,
+        8 | | ):
+        9 | |     pass
+          | |________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:8:3
+          |
+        8 |   ):
+          |  ___^
+        9 | |     pass
+          | |________^
+          |
+
+        info[folding-range]: Folding Range
+          --> main.py:11:1
+           |
+        11 | / for (
+        12 | |     key,
+        13 | |     value,
+        14 | | ) in (
+        15 | |     items
+        16 | | ):
+        17 | |     pass
+           | |________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:16:3
+           |
+        16 |   ):
+           |  ___^
+        17 | |     pass
+           | |________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:19:1
+           |
+        19 | / with (
+        20 | |     open("a") as a,
+        21 | |     open("b") as b,
+        22 | | ):
+        23 | |     pass
+           | |________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:22:3
+           |
+        22 |   ):
+           |  ___^
+        23 | |     pass
+           | |________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:25:1
+           |
+        25 | / try:
+        26 | |     pass
+           | |________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:25:5
+           |
+        25 |   try:
+           |  _____^
+        26 | |     pass
+           | |________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:27:1
+           |
+        27 | / except (
+        28 | |     ValueError,
+        29 | |     TypeError,
+        30 | | ) as error:
+        31 | |     raise error
+           | |_______________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:30:12
+           |
+        30 |   ) as error:
+           |  ____________^
+        31 | |     raise error
+           | |_______________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:33:1
+           |
+        33 | / match value:
+        34 | |     case {
+        35 | |         "kind": kind,
+        36 | |         "payload": payload,
+        37 | |     }:
+        38 | |         handle_mapping()
+           | |________________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:33:13
+           |
+        33 |   match value:
+           |  _____________^
+        34 | |     case {
+        35 | |         "kind": kind,
+        36 | |         "payload": payload,
+        37 | |     }:
+        38 | |         handle_mapping()
+           | |________________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:34:5
+           |
+        34 | /     case {
+        35 | |         "kind": kind,
+        36 | |         "payload": payload,
+        37 | |     }:
+        38 | |         handle_mapping()
+           | |________________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:37:7
+           |
+        37 |       }:
+           |  _______^
+        38 | |         handle_mapping()
+           | |________________________^
+           |
+        "#);
     }
 
     #[test]
@@ -953,6 +1481,14 @@ if condition:  # why
             .build();
 
         assert_snapshot!(test.folding_ranges(), @"
+        info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / if condition:  # why
+        3 | |     do_work()
+          | |_____________^
+          |
+
         info[folding-range]: Folding Range
          --> main.py:2:21
           |
@@ -987,11 +1523,40 @@ if condition:
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+          --> main.py:2:1
+           |
+         2 | / if condition:
+         3 | |     while running:
+         4 | |         do_this()
+         5 | |         and_that()
+         6 | |         if maybe:
+         7 | |             and_maybe_this()
+         8 | |             and_maybe_this()
+         9 | |             and_maybe_this()
+        10 | |             and_maybe_this()
+           | |____________________________^
+           |
+
+        info[folding-range]: Folding Range
           --> main.py:2:14
            |
          2 |   if condition:
            |  ______________^
          3 | |     while running:
+         4 | |         do_this()
+         5 | |         and_that()
+         6 | |         if maybe:
+         7 | |             and_maybe_this()
+         8 | |             and_maybe_this()
+         9 | |             and_maybe_this()
+        10 | |             and_maybe_this()
+           | |____________________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:3:5
+           |
+         3 | /     while running:
          4 | |         do_this()
          5 | |         and_that()
          6 | |         if maybe:
@@ -1010,6 +1575,17 @@ if condition:
          4 | |         do_this()
          5 | |         and_that()
          6 | |         if maybe:
+         7 | |             and_maybe_this()
+         8 | |             and_maybe_this()
+         9 | |             and_maybe_this()
+        10 | |             and_maybe_this()
+           | |____________________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:6:9
+           |
+         6 | /         if maybe:
          7 | |             and_maybe_this()
          8 | |             and_maybe_this()
          9 | |             and_maybe_this()
@@ -1057,6 +1633,15 @@ else:
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / for item in items:
+        3 | |     process(item)
+        4 | |     validate(item)
+          | |__________________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:19
           |
         2 |   for item in items:
@@ -1064,6 +1649,15 @@ else:
         3 | |     process(item)
         4 | |     validate(item)
           | |__________________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:5:1
+          |
+        5 | / else:
+        6 | |     log_success()
+        7 | |     notify_complete()
+          | |_____________________^
           |
 
         info[folding-range]: Folding Range
@@ -1077,6 +1671,15 @@ else:
           |
 
         info[folding-range]: Folding Range
+          --> main.py:9:1
+           |
+         9 | / while condition:
+        10 | |     do_work()
+        11 | |     check_status()
+           | |__________________^
+           |
+
+        info[folding-range]: Folding Range
           --> main.py:9:17
            |
          9 |   while condition:
@@ -1084,6 +1687,15 @@ else:
         10 | |     do_work()
         11 | |     check_status()
            | |__________________^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:12:1
+           |
+        12 | / else:
+        13 | |     handle_done()
+        14 | |     cleanup_resources()
+           | |_______________________^
            |
 
         info[folding-range]: Folding Range
@@ -1121,12 +1733,28 @@ finally:
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / try:
+        3 | |     risky_operation()
+          | |_____________________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:5
           |
         2 |   try:
           |  _____^
         3 | |     risky_operation()
           | |_____________________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:8:1
+          |
+        8 | / else:
+        9 | |     success_action()
+          | |____________________^
           |
 
         info[folding-range]: Folding Range
@@ -1139,6 +1767,14 @@ finally:
           |
 
         info[folding-range]: Folding Range
+          --> main.py:10:1
+           |
+        10 | / finally:
+        11 | |     cleanup()
+           | |_____________^
+           |
+
+        info[folding-range]: Folding Range
           --> main.py:10:9
            |
         10 |   finally:
@@ -1148,12 +1784,28 @@ finally:
            |
 
         info[folding-range]: Folding Range
+         --> main.py:4:1
+          |
+        4 | / except ValueError:
+        5 | |     handle_value_error()
+          | |________________________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:4:19
           |
         4 |   except ValueError:
           |  ___________________^
         5 | |     handle_value_error()
           | |________________________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:6:1
+          |
+        6 | / except TypeError:
+        7 | |     handle_type_error()
+          | |_______________________^
           |
 
         info[folding-range]: Folding Range
@@ -1311,6 +1963,19 @@ match value:
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / match value:
+        3 | |     case 1:
+        4 | |         one()
+        5 | |     case 2:
+        6 | |         two()
+        7 | |     case _:
+        8 | |         default()
+          | |_________________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:13
           |
         2 |   match value:
@@ -1325,11 +1990,27 @@ match value:
           |
 
         info[folding-range]: Folding Range
+         --> main.py:3:5
+          |
+        3 | /     case 1:
+        4 | |         one()
+          | |_____________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:3:12
           |
         3 |       case 1:
           |  ____________^
         4 | |         one()
+          | |_____________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:5:5
+          |
+        5 | /     case 2:
+        6 | |         two()
           | |_____________^
           |
 
@@ -1340,6 +2021,14 @@ match value:
           |  ____________^
         6 | |         two()
           | |_____________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:7:5
+          |
+        7 | /     case _:
+        8 | |         default()
+          | |_________________^
           |
 
         info[folding-range]: Folding Range
@@ -1383,6 +2072,14 @@ def main():
           |
 
         info[folding-range]: Folding Range
+         --> main.py:8:1
+          |
+        8 | / def main():
+        9 | |     pass
+          | |________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:8:12
           |
         8 |   def main():
@@ -1400,16 +2097,6 @@ def main():
         5 | | # endregion
           | |___________^
           |
-
-        info[folding-range]: Folding Range (region)
-          --> main.py:7:1
-           |
-         7 | / # region Main
-         8 | | def main():
-         9 | |     pass
-        10 | | # endregion
-           | |___________^
-           |
         ");
     }
 
@@ -1462,6 +2149,18 @@ def my_function():
             .build();
 
         assert_snapshot!(test.folding_ranges(), @r#"
+        info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / def my_function():
+        3 | |     """
+        4 | |     This is a multiline
+        5 | |     docstring.
+        6 | |     """
+        7 | |     pass
+          | |________^
+          |
+
         info[folding-range]: Folding Range
          --> main.py:2:19
           |
@@ -1533,6 +2232,18 @@ def with_rawstring_doc():
 
         assert_snapshot!(test.folding_ranges(), @r#"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / def with_fstring_doc():
+        3 | |     f"""
+        4 | |     This is an f-string
+        5 | |     used as a docstring.
+        6 | |     """
+        7 | |     pass
+          | |________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:24
           |
         2 |   def with_fstring_doc():
@@ -1566,6 +2277,18 @@ def with_rawstring_doc():
           |
 
         info[folding-range]: Folding Range
+          --> main.py:10:1
+           |
+        10 | / def with_tstring_doc():
+        11 | |     t"""
+        12 | |     This is a t-string
+        13 | |     used as a docstring.
+        14 | |     """
+        15 | |     pass
+           | |________^
+           |
+
+        info[folding-range]: Folding Range
           --> main.py:10:24
            |
         10 |   def with_tstring_doc():
@@ -1596,6 +2319,18 @@ def with_rawstring_doc():
         13 | |     used as a docstring.
         14 | |     """
            | |_______^
+           |
+
+        info[folding-range]: Folding Range
+          --> main.py:18:1
+           |
+        18 | / def with_rawstring_doc():
+        19 | |     r"""
+        20 | |     This is a raw string
+        21 | |     used as a docstring.
+        22 | |     """
+        23 | |     pass
+           | |________^
            |
 
         info[folding-range]: Folding Range
@@ -1657,6 +2392,14 @@ def foo():
             test.folding_ranges(),
             @"
         info[folding-range]: Folding Range
+         --> main.py:6:1
+          |
+        6 | / def foo():
+        7 | |     pass
+          | |________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:6:11
           |
         6 |   def foo():
@@ -1701,6 +2444,15 @@ with open("file.txt") as f:
 
         assert_snapshot!(test.folding_ranges(), @r#"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / with open("file.txt") as f:
+        3 | |     content = f.read()
+        4 | |     process(content)
+          | |____________________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:28
           |
         2 |   with open("file.txt") as f:
@@ -1741,6 +2493,28 @@ with open("file.txt") as f:
             .build();
 
         assert_snapshot!(test.folding_ranges(), @r#"
+        info[folding-range]: Folding Range
+          --> main.py:2:17
+           |
+         2 | /                 def chunk_date_range():
+         3 | |                     """Split a date range into chunks respecting the maximum days limit.
+         4 | |
+         5 | |                     The API has a 1-month limit, so this function splits larger ranges
+         6 | |                     into smaller chunks that can be requested individually.
+         7 | |                     """
+         8 | |                     # Handle both date-only and datetime strings
+         9 | |                     a = 10
+        10 | |
+        11 | |                     while current <= end:
+        12 | |                         # Calculate the end of the current chunk
+        13 | |                         # Go to the last day of the current month
+        14 | |                         b = 20
+        15 | |
+        16 | |                         # Don't exceed the overall end date or max_days limit
+        17 | |                         c = 30
+           | |______________________________^
+           |
+
         info[folding-range]: Folding Range
           --> main.py:2:40
            |
@@ -1787,6 +2561,19 @@ with open("file.txt") as f:
           |
 
         info[folding-range]: Folding Range
+          --> main.py:11:21
+           |
+        11 | /                     while current <= end:
+        12 | |                         # Calculate the end of the current chunk
+        13 | |                         # Go to the last day of the current month
+        14 | |                         b = 20
+        15 | |
+        16 | |                         # Don't exceed the overall end date or max_days limit
+        17 | |                         c = 30
+           | |______________________________^
+           |
+
+        info[folding-range]: Folding Range
           --> main.py:11:42
            |
         11 |                       while current <= end:
@@ -1798,14 +2585,6 @@ with open("file.txt") as f:
         16 | |                         # Don't exceed the overall end date or max_days limit
         17 | |                         c = 30
            | |______________________________^
-           |
-
-        info[folding-range]: Folding Range (comment)
-          --> main.py:12:1
-           |
-        12 | /                         # Calculate the end of the current chunk
-        13 | |                         # Go to the last day of the current month
-           | |_________________________________________________________________^
            |
         "#);
     }
@@ -1825,6 +2604,14 @@ with open("file.txt") as f:
             .build();
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:1:1
+          |
+        1 | / class MyClass:
+        2 | |     pass
+          | |________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:1:15
           |
         1 |   class MyClass:
@@ -1840,6 +2627,14 @@ with open("file.txt") as f:
             .build();
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:1:1
+          |
+        1 | / class MyClass:
+        2 | |     pass
+          | |________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:1:15
           |
         1 |   class MyClass:
@@ -1854,6 +2649,14 @@ with open("file.txt") as f:
             .source("main.py", "class MyClass:\r    pass\r<CURSOR>")
             .build();
         assert_snapshot!(test.folding_ranges(), @"
+        info[folding-range]: Folding Range
+         --> main.py:1:1
+          |
+        1 | / class MyClass:
+        2 | |     pass
+          | |________^
+          |
+
         info[folding-range]: Folding Range
          --> main.py:1:15
           |
@@ -1898,6 +2701,15 @@ def my_function():
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / @decorator
+        3 | | def my_function():
+        4 | |     pass
+          | |________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:3:19
           |
         3 |   def my_function():
@@ -1925,6 +2737,17 @@ def my_function():
             .build();
 
         assert_snapshot!(test.folding_ranges(), @"
+        info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / @first
+        3 | | @second
+        4 | | @third
+        5 | | def my_function():
+        6 | |     pass
+          | |________^
+          |
+
         info[folding-range]: Folding Range
          --> main.py:5:19
           |
@@ -1954,6 +2777,16 @@ class MyClass:
         // Single decorator is one line, so no decorator folding range is emitted.
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / @dataclass
+        3 | | class MyClass:
+        4 | |     value: int
+        5 | |     name: str
+          | |_____________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:3:15
           |
         3 |   class MyClass:
@@ -1982,6 +2815,16 @@ class MyClass:
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / @decorator_a
+        3 | | @decorator_b
+        4 | | class MyClass:
+        5 | |     value: int
+          | |______________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:4:15
           |
         4 |   class MyClass:
@@ -2007,6 +2850,15 @@ async def my_async_function():
             .build();
 
         assert_snapshot!(test.folding_ranges(), @"
+        info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / @decorator
+        3 | | async def my_async_function():
+        4 | |     pass
+          | |________^
+          |
+
         info[folding-range]: Folding Range
          --> main.py:3:31
           |
@@ -2035,11 +2887,30 @@ def outer_function():
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / def outer_function():
+        3 | |     @decorator
+        4 | |     def inner_function():
+        5 | |         pass
+          | |____________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:22
           |
         2 |   def outer_function():
           |  ______________________^
         3 | |     @decorator
+        4 | |     def inner_function():
+        5 | |         pass
+          | |____________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:3:5
+          |
+        3 | /     @decorator
         4 | |     def inner_function():
         5 | |         pass
           | |____________^
@@ -2073,11 +2944,30 @@ class MyClass:
 
         assert_snapshot!(test.folding_ranges(), @"
         info[folding-range]: Folding Range
+         --> main.py:2:1
+          |
+        2 | / class MyClass:
+        3 | |     @decorator
+        4 | |     async def my_async_method(self):
+        5 | |         pass
+          | |____________^
+          |
+
+        info[folding-range]: Folding Range
          --> main.py:2:15
           |
         2 |   class MyClass:
           |  _______________^
         3 | |     @decorator
+        4 | |     async def my_async_method(self):
+        5 | |         pass
+          | |____________^
+          |
+
+        info[folding-range]: Folding Range
+         --> main.py:3:5
+          |
+        3 | /     @decorator
         4 | |     async def my_async_method(self):
         5 | |         pass
           | |____________^
