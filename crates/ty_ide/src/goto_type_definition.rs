@@ -250,10 +250,10 @@ mod tests {
 
         assert_snapshot!(test.goto_type_definition(), @r#"
         info[goto-type definition]: Go to type definition
-          --> main.py:11:17
+          --> main.py:12:5
            |
-        11 |                 color
-           |                 ^^^^^ Clicking here
+        12 |     color
+           |     ^^^^^ Clicking here
            |
         info: Found 1 type definition
          --> main.py:6:5
