@@ -91,14 +91,14 @@ use crate::types::tuple::{Tuple, TupleLength, TupleSpecBuilder, TupleType};
 use crate::types::type_alias::{ManualPEP695TypeAliasType, PEP695TypeAliasType};
 use crate::types::typevar::{BoundTypeVarIdentity, TypeVarConstraints, TypeVarIdentity};
 use crate::types::{
-    CallDunderError, CallableBinding, CallableType, CallableTypes, ClassType, DynamicType,
-    InferenceFlags, InternedConstraintSet, InternedType, IntersectionBuilder, IntersectionType,
-    KnownClass, KnownInstanceType, KnownUnion, LiteralValueTypeKind, MemberLookupPolicy,
-    ParamSpecAttrKind, Parameter, ParameterForm, Parameters, Signature, SpecialFormType,
-    SubclassOfType, Type, TypeAliasType, TypeAndQualifiers, TypeContext, TypeQualifiers,
-    TypeVarBoundOrConstraints, TypeVarKind, TypeVarVariance, TypedDictType, UnionAccumulator,
-    UnionBuilder, UnionType, binding_type, infer_complete_scope_types, infer_scope_types,
-    todo_type,
+    BoundTypeVarInstance, CallDunderError, CallableBinding, CallableType, CallableTypes, ClassType,
+    DynamicType, InferenceFlags, InternedConstraintSet, InternedType, IntersectionBuilder,
+    IntersectionType, KnownClass, KnownInstanceType, KnownUnion, LiteralValueTypeKind,
+    MemberLookupPolicy, ParamSpecAttrKind, Parameter, ParameterForm, Parameters, Signature,
+    SpecialFormType, SubclassOfType, Type, TypeAliasType, TypeAndQualifiers, TypeContext,
+    TypeQualifiers, TypeVarBoundOrConstraints, TypeVarKind, TypeVarVariance, TypedDictType,
+    UnionAccumulator, UnionBuilder, UnionType, binding_type, infer_complete_scope_types,
+    infer_scope_types, todo_type,
 };
 use crate::{AnalysisSettings, Db, FxIndexSet, Program};
 use ty_python_core::ast_ids::ScopedUseId;
